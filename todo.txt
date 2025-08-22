@@ -1,0 +1,15 @@
+1. Clear the embedding directory once before creating new. 
+2. File types extend to .pdf, .doc. done
+3. Create two major functions - one to take the file path, extract content and create embedding out of it. done
+4. Second - To take user question and send the response using the emebddings already there. done
+5. Create two endpoints - /create-embeddings - call the first function done
+6. /chat - call the second function done
+
+
+Frontend -> DONE
+1. Design the upload page
+2. Make the upload working so that the file you upload gets saved into uploads folder
+3. A buuton which will trigger the create embeddings endpoint
+3. A button after embedding created clicking on which will open new page chat
+4. Design chat page like chatgpt
+5. trigger chat endoint with this page

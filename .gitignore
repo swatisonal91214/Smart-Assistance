@@ -1,0 +1,5 @@
+backend/uploaded_files
+backend/embeddings
+backend/venv
+backend/__pycache__
+frontend/node_modules
