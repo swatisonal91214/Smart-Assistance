@@ -2,6 +2,9 @@ import re
 from typing import Optional
 from PyPDF2 import PdfReader
 
+# Add support for .doc files
+import docx
+
 
 def read_txt(file_path: str) -> str:
     """
@@ -13,6 +16,25 @@ def read_txt(file_path: str) -> str:
     """
     with open(file_path, 'r', encoding='utf-8') as f:
         return f.read()
+
+def read_doc(doc_path: str) -> Optional[str]:
+    """
+    Extracts and cleans text from a .docx file.
+    Args:
+        doc_path (str): Path to the .docx file.
+    Returns:
+        str: Cleaned text content, or None if extraction fails.
+    """
+    try:
+        doc = docx.Document(doc_path)
+        text = "\n".join([para.text for para in doc.paragraphs])
+        # Basic cleaning: remove extra whitespace, non-printable chars
+        text = re.sub(r'\s+', ' ', text)
+        text = re.sub(r'[^\x20-\x7E]', '', text)
+        return text.strip()
+    except Exception as e:
+        print(f"Error extracting DOC text: {e}")
+        return None
 
 def read_pdf(pdf_path: str) -> Optional[str]:
     """
@@ -49,8 +71,10 @@ def read_document(file_path: str) -> str:
         return read_pdf(file_path)
     elif file_path.endswith('.txt'):
         return read_txt(file_path)
+    elif file_path.endswith('.docx'):
+        return read_doc(file_path)
     else:
-        raise ValueError("Unsupported file format. Only .pdf and .txt are supported.")
+        raise ValueError("Unsupported file format. Only .pdf, .txt, and .docx are supported.")
 
 # if __name__ == "__main__":
 #     # Example usage
