@@ -57,6 +57,9 @@ const ChatComponent = () => {
       alignItems: 'center',
       justifyContent: 'flex-start',
       background: 'linear-gradient(120deg, #f8fafc 0%, #e3eafc 100%)',
+      backgroundImage: 'url(/IndustrialAutomationrobo.jpeg)', // Same as Smart Assistance
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
       fontFamily: 'Inter, Arial, sans-serif',
       padding: '24px 8px',
       boxSizing: 'border-box',
@@ -227,7 +230,7 @@ const ChatComponent = () => {
                           }
                         `}</style>
                         <span style={{ width: '100%', textAlign: 'center', fontStyle: 'italic', color: '#888', fontWeight: 500 }}>
-                          Loading...
+                          Getting your Answer ready !!
                         </span>
                       </span>
                     )}
