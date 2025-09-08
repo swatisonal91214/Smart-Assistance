@@ -12,14 +12,34 @@ const LoginSignupPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Get role from navigation state, fallback to user
+    setError('');
     let role = (location.state && location.state.role) ? location.state.role : 'user';
     if (isLogin) {
       if (!userId || !password) {
         setError('Please enter User ID and Password');
         return;
+      }
+      // Login API call
+      try {
+        const res = await fetch('http://localhost:8000/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, password })
+        });
+        const data = await res.json();
+        if (data.success) {
+          // Only allow login if auth matches expected role
+          if (role === 'manager' && data.auth === 'manager') navigate('/manager-dashboard');
+          else if (role === 'admin' && data.auth === 'admin') navigate('/admin-dashboard');
+          else if (role === 'user' && data.auth === 'user') navigate('/user-dashboard');
+          else setError('Not authenticated');
+        } else {
+          setError('Not authenticated');
+        }
+      } catch (err) {
+        setError('Server error');
       }
     } else {
       if (!name || !email || !password || !confirmPassword) {
@@ -30,12 +50,25 @@ const LoginSignupPage = () => {
         setError('Passwords do not match');
         return;
       }
+      // Signup API call
+      try {
+        const res = await fetch('http://localhost:8000/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password })
+        });
+        const data = await res.json();
+        if (data.success) {
+          setUserId(data.userId);
+          setIsLogin(true);
+          setError('');
+        } else {
+          setError(data.error || 'Signup failed');
+        }
+      } catch (err) {
+        setError('Server error');
+      }
     }
-    setError('');
-    // Simulate login/signup success
-    if (role === 'manager') navigate('/manager-dashboard');
-    else if (role === 'admin') navigate('/admin-dashboard');
-    else navigate('/user-dashboard');
   };
 
   return (

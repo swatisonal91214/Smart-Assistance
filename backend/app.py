@@ -17,6 +17,27 @@ app.add_middleware(
 	allow_methods=["*"],
 	allow_headers=["*"],
 )
+
+import psycopg2
+from pydantic import BaseModel
+
+def get_db_connection():
+	return psycopg2.connect(
+		dbname="postgres",
+		user="postgres",
+		password="admin",  # Change to your actual password
+		host="localhost",
+		port="5432"
+	)
+
+class SignupRequest(BaseModel):
+	name: str
+	email: str
+	password: str
+
+class LoginRequest(BaseModel):
+	userId: str
+	password: str
 @app.get("/")
 async def read_root():
 	return JSONResponse(content={"message": "Hello, FastAPI!"})
@@ -50,4 +71,39 @@ async def chat_endpoint(request: ChatRequest):
         import traceback
         print("/chat error:", traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
+
+# Signup endpoint
+@app.post("/signup")
+async def signup(request: SignupRequest):
+	conn = get_db_connection()
+	cur = conn.cursor()
+	cur.execute("SELECT COUNT(*) FROM users;")
+	count = cur.fetchone()[0]
+	user_id = f"USER-{count+1:02d}"
+	try:
+		cur.execute("""
+			INSERT INTO users (userId, name, email, role, auth, password)
+			VALUES (%s, %s, %s, %s, %s, %s)
+		""", (user_id, request.name, request.email, '', 'user', request.password))
+		conn.commit()
+		return {"success": True, "userId": user_id}
+	except Exception as e:
+		return {"success": False, "error": str(e)}
+	finally:
+		cur.close()
+		conn.close()
+
+# Login endpoint
+@app.post("/login")
+async def login(request: LoginRequest):
+	conn = get_db_connection()
+	cur = conn.cursor()
+	cur.execute("SELECT password, auth FROM users WHERE userId=%s", (request.userId,))
+	result = cur.fetchone()
+	cur.close()
+	conn.close()
+	if result and result[0] == request.password:
+		return {"success": True, "auth": result[1]}
+	else:
+		return {"success": False, "error": "Not authenticated"}
 
