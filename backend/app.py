@@ -1,6 +1,6 @@
-from fastapi import FastAPI, UploadFile, File
+from typing import List
+from fastapi import Query, FastAPI, UploadFile, File, Request, status, HTTPException
 from fastapi.responses import JSONResponse
-from fastapi import Request, status, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from create_embeddings import create_and_store_embeddings
 from models import CreateEmbeddingsRequest, CreateEmbeddingsResponse, ChatRequest, ChatResponse
@@ -17,6 +17,118 @@ app.add_middleware(
 	allow_methods=["*"],
 	allow_headers=["*"],
 )
+
+# GET /roles - return all role names
+@app.get("/roles")
+async def get_roles():
+	conn = get_db_connection()
+	cur = conn.cursor()
+	cur.execute("SELECT RoleName FROM roles;")
+	rows = cur.fetchall()
+	cur.close()
+	conn.close()
+	role_names = [row[0] for row in rows]
+	return {"roles": role_names}
+
+# POST /roles - add a new role
+@app.post("/roles")
+async def add_role(request: Request):
+	data = await request.json()
+	role_name = data.get("roleName", "").strip()
+	if not role_name:
+		return {"success": False, "error": "Role name required"}
+	conn = get_db_connection()
+	cur = conn.cursor()
+	# Generate next Roleid
+	cur.execute("SELECT COUNT(*) FROM roles;")
+	count = cur.fetchone()[0]
+	role_id = f"R-{count+1:02d}"
+	try:
+		cur.execute("INSERT INTO roles (Roleid, RoleName) VALUES (%s, %s);", (role_id, role_name))
+		conn.commit()
+		return {"success": True}
+	except Exception as e:
+		return {"success": False, "error": str(e)}
+	finally:
+		cur.close()
+		conn.close()
+
+# DELETE /roles/{roleName} - remove a role by name
+@app.delete("/roles/{roleName}")
+async def delete_role(roleName: str):
+	conn = get_db_connection()
+	cur = conn.cursor()
+	try:
+		cur.execute("DELETE FROM roles WHERE RoleName=%s;", (roleName,))
+		conn.commit()
+		return {"success": True}
+	except Exception as e:
+		return {"success": False, "error": str(e)}
+	finally:
+		cur.close()
+		conn.close()
+
+# Add CORS middleware
+app.add_middleware(
+	CORSMiddleware,
+	allow_origins=["*"],
+	allow_credentials=True,
+	allow_methods=["*"],
+	allow_headers=["*"],
+)
+from typing import List
+# Roles endpoints
+from fastapi import Query
+
+# GET /roles - return all role names
+@app.get("/roles")
+async def get_roles():
+	conn = get_db_connection()
+	cur = conn.cursor()
+	cur.execute("SELECT RoleName FROM roles;")
+	rows = cur.fetchall()
+	cur.close()
+	conn.close()
+	role_names = [row[0] for row in rows]
+	return {"roles": role_names}
+
+# POST /roles - add a new role
+@app.post("/roles")
+async def add_role(request: Request):
+	data = await request.json()
+	role_name = data.get("roleName", "").strip()
+	if not role_name:
+		return {"success": False, "error": "Role name required"}
+	conn = get_db_connection()
+	cur = conn.cursor()
+	# Generate next Roleid
+	cur.execute("SELECT COUNT(*) FROM roles;")
+	count = cur.fetchone()[0]
+	role_id = f"R-{count+1:02d}"
+	try:
+		cur.execute("INSERT INTO roles (Roleid, RoleName) VALUES (%s, %s);", (role_id, role_name))
+		conn.commit()
+		return {"success": True}
+	except Exception as e:
+		return {"success": False, "error": str(e)}
+	finally:
+		cur.close()
+		conn.close()
+
+# DELETE /roles/{roleName} - remove a role by name
+@app.delete("/roles/{roleName}")
+async def delete_role(roleName: str):
+	conn = get_db_connection()
+	cur = conn.cursor()
+	try:
+		cur.execute("DELETE FROM roles WHERE RoleName=%s;", (roleName,))
+		conn.commit()
+		return {"success": True}
+	except Exception as e:
+		return {"success": False, "error": str(e)}
+	finally:
+		cur.close()
+		conn.close()
 
 import psycopg2
 from pydantic import BaseModel
@@ -106,4 +218,44 @@ async def login(request: LoginRequest):
 		return {"success": True, "auth": result[1]}
 	else:
 		return {"success": False, "error": "Not authenticated"}
+
+# Assign role to user endpoint
+from fastapi import Body
+
+class AssignRoleRequest(BaseModel):
+	userId: str
+	role: str
+
+@app.post("/assign-role")
+async def assign_role(request: AssignRoleRequest):
+	conn = get_db_connection()
+	cur = conn.cursor()
+	try:
+		cur.execute("UPDATE users SET role=%s WHERE userId=%s", (request.role, request.userId))
+		conn.commit()
+		return {"success": True}
+	except Exception as e:
+		return {"success": False, "error": str(e)}
+	finally:
+		cur.close()
+		conn.close()
+
+# Get all users with roles
+
+@app.get("/users")
+async def get_users():
+	conn = get_db_connection()
+	cur = conn.cursor()
+	try:
+		cur.execute("SELECT userId, name, email, role FROM users WHERE role IS NOT NULL AND role <> ''")
+		rows = cur.fetchall()
+		users = [
+			{"userId": row[0], "name": row[1], "email": row[2], "role": row[3]} for row in rows
+		]
+		return {"users": users}
+	except Exception as e:
+		return {"success": False, "error": str(e)}
+	finally:
+		cur.close()
+		conn.close()
 

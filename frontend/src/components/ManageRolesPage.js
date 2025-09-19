@@ -1,6 +1,54 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+
+const API_BASE = 'http://localhost:8000'; // Change if backend runs elsewhere
 
 const ManageRolesPage = () => {
+  const [users, setUsers] = useState([]);
+  const [userId, setUserId] = useState('');
+  const [role, setRole] = useState('');
+  const [assignLoading, setAssignLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Fetch users from backend
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/users`);
+      const data = await res.json();
+      if (data.users) setUsers(data.users);
+    } catch (e) {
+      setError('Failed to fetch users');
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // Assign role handler
+  const handleAssignRole = async (e) => {
+    e.preventDefault();
+    setAssignLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`${API_BASE}/assign-role`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, role })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setUserId('');
+        setRole('');
+        fetchUsers();
+      } else {
+        setError(data.error || 'Failed to assign role');
+      }
+    } catch (e) {
+      setError('Failed to assign role');
+    }
+    setAssignLoading(false);
+  };
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -51,25 +99,21 @@ const ManageRolesPage = () => {
         }}>
           Assign roles to users, remove roles, and view current assignments below.
         </div>
-
+        {error && <div style={{ color: 'red', marginBottom: 12 }}>{error}</div>}
         {/* Assign Role Form */}
-        <form style={{ width: '100%', maxWidth: 400, margin: '0 auto 24px auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <input type="text" placeholder="User ID" style={{ padding: '10px', borderRadius: '8px', border: 'none', fontSize: '1rem', background: '#f3f6fa', color: '#222' }} />
-          <select style={{ padding: '10px', borderRadius: '8px', border: 'none', fontSize: '1rem', background: '#f3f6fa', color: '#222' }}>
+        <form onSubmit={handleAssignRole} style={{ width: '100%', maxWidth: 400, margin: '0 auto 24px auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <input type="text" value={userId} onChange={e => setUserId(e.target.value)} placeholder="User ID" style={{ padding: '10px', borderRadius: '8px', border: 'none', fontSize: '1rem', background: '#f3f6fa', color: '#222' }} />
+          <select value={role} onChange={e => setRole(e.target.value)} style={{ padding: '10px', borderRadius: '8px', border: 'none', fontSize: '1rem', background: '#f3f6fa', color: '#222' }}>
             <option value="">Select Role</option>
             <option value="Engineer">Engineer</option>
             <option value="Operator">Operator</option>
+            {/* Add more roles as needed */}
           </select>
-          <button type="submit" style={{ padding: '10px', borderRadius: '8px', fontWeight: 700, background: 'linear-gradient(120deg, #24518a 0%, #1a3760 100%)', color: '#fff', border: 'none', boxShadow: '0 2px 8px #24518a', cursor: 'pointer', fontSize: '1rem' }}>Assign Role</button>
+          <button type="submit" disabled={assignLoading} style={{ padding: '10px', borderRadius: '8px', fontWeight: 700, background: 'linear-gradient(120deg, #24518a 0%, #1a3760 100%)', color: '#fff', border: 'none', boxShadow: '0 2px 8px #24518a', cursor: 'pointer', fontSize: '1rem' }}>{assignLoading ? 'Assigning...' : 'Assign Role'}</button>
         </form>
-
         {/* Remove Role for Existing User */}
-        <form style={{ width: '100%', maxWidth: 400, margin: '0 auto 24px auto', display: 'flex', flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-          <input type="text" placeholder="User ID" style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', fontSize: '1rem', background: '#f3f6fa', color: '#222' }} />
-          <button type="submit" style={{ padding: '10px 18px', borderRadius: '8px', fontWeight: 700, background: 'linear-gradient(120deg, #6fa3ef 0%, #3b6cb7 100%)', color: '#fff', border: 'none', boxShadow: '0 2px 8px #24518a', cursor: 'pointer', fontSize: '1rem' }}>Remove Role</button>
-        </form>
-
-        {/* List of Users and Roles (Dummy Data) */}
+        {/* ...existing code... */}
+        {/* List of Users and Roles */}
         <div style={{ width: '100%', maxWidth: 500, margin: '0 auto', background: '#f3f6fa', borderRadius: '12px', padding: '18px 12px', color: '#222', boxShadow: '0 2px 8px #e3eafc' }}>
           <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '12px', color: '#24518a' }}>Current Users & Roles</div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '1rem' }}>
@@ -80,10 +124,16 @@ const ManageRolesPage = () => {
               </tr>
             </thead>
             <tbody>
-              <tr><td style={{ padding: '8px' }}>user1</td><td style={{ padding: '8px' }}>Engineer</td></tr>
-              <tr><td style={{ padding: '8px' }}>user2</td><td style={{ padding: '8px' }}>Operator</td></tr>
-              <tr><td style={{ padding: '8px' }}>user3</td><td style={{ padding: '8px' }}>Engineer</td></tr>
-              <tr><td style={{ padding: '8px' }}>user4</td><td style={{ padding: '8px' }}>Operator</td></tr>
+              {users.length === 0 ? (
+                <tr><td colSpan={2} style={{ padding: '8px', textAlign: 'center' }}>No users found</td></tr>
+              ) : (
+                users.map(u => (
+                  <tr key={u.userId}>
+                    <td style={{ padding: '8px' }}>{u.userId}</td>
+                    <td style={{ padding: '8px' }}>{u.role || '-'}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

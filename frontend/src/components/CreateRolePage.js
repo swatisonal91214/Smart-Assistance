@@ -1,6 +1,69 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 const CreateRolePage = () => {
+  const [roles, setRoles] = useState([]);
+  const [newRole, setNewRole] = useState('');
+  const [removeRole, setRemoveRole] = useState('');
+  const [error, setError] = useState('');
+
+  // Fetch roles from backend
+  useEffect(() => {
+    fetch('http://localhost:8000/roles')
+      .then(res => res.json())
+      .then(data => setRoles(data.roles || []))
+      .catch(() => setRoles([]));
+  }, []);
+
+  // Add role handler
+  const handleCreateRole = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!newRole.trim()) {
+      setError('Role name required');
+      return;
+    }
+    try {
+      const res = await fetch('http://localhost:8000/roles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roleName: newRole })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setRoles(r => [...r, newRole]);
+        setNewRole('');
+      } else {
+        setError(data.error || 'Could not create role');
+      }
+    } catch {
+      setError('Server error');
+    }
+  };
+
+  // Remove role handler
+  const handleRemoveRole = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!removeRole.trim()) {
+      setError('Role name required');
+      return;
+    }
+    try {
+      const res = await fetch(`http://localhost:8000/roles/${encodeURIComponent(removeRole)}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (data.success) {
+        setRoles(r => r.filter(role => role !== removeRole));
+        setRemoveRole('');
+      } else {
+        setError(data.error || 'Could not remove role');
+      }
+    } catch {
+      setError('Server error');
+    }
+  };
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -51,17 +114,18 @@ const CreateRolePage = () => {
         }}>
           Add new roles, remove existing roles, and view all roles below.
         </div>
+        {error && <div style={{ color: 'red', marginBottom: '12px', fontWeight: 500 }}>{error}</div>}
         {/* Create Role Form */}
-        <form style={{ width: '100%', maxWidth: 400, margin: '0 auto 24px auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <input type="text" placeholder="Role Name" style={{ padding: '10px', borderRadius: '8px', border: 'none', fontSize: '1rem', background: '#f3f6fa', color: '#222' }} />
+        <form style={{ width: '100%', maxWidth: 400, margin: '0 auto 24px auto', display: 'flex', flexDirection: 'column', gap: 12 }} onSubmit={handleCreateRole}>
+          <input type="text" placeholder="Role Name" value={newRole} onChange={e => setNewRole(e.target.value)} style={{ padding: '10px', borderRadius: '8px', border: 'none', fontSize: '1rem', background: '#f3f6fa', color: '#222' }} />
           <button type="submit" style={{ padding: '10px', borderRadius: '8px', fontWeight: 700, background: 'linear-gradient(120deg, #24518a 0%, #1a3760 100%)', color: '#fff', border: 'none', boxShadow: '0 2px 8px #24518a', cursor: 'pointer', fontSize: '1rem' }}>Create Role</button>
         </form>
         {/* Remove Role Form */}
-        <form style={{ width: '100%', maxWidth: 400, margin: '0 auto 24px auto', display: 'flex', flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-          <input type="text" placeholder="Role Name" style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', fontSize: '1rem', background: '#f3f6fa', color: '#222' }} />
+        <form style={{ width: '100%', maxWidth: 400, margin: '0 auto 24px auto', display: 'flex', flexDirection: 'row', gap: 12, alignItems: 'center' }} onSubmit={handleRemoveRole}>
+          <input type="text" placeholder="Role Name" value={removeRole} onChange={e => setRemoveRole(e.target.value)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', fontSize: '1rem', background: '#f3f6fa', color: '#222' }} />
           <button type="submit" style={{ padding: '10px 18px', borderRadius: '8px', fontWeight: 700, background: 'linear-gradient(120deg, #6fa3ef 0%, #3b6cb7 100%)', color: '#fff', border: 'none', boxShadow: '0 2px 8px #24518a', cursor: 'pointer', fontSize: '1rem' }}>Remove Role</button>
         </form>
-        {/* List of Roles (Dummy Data) */}
+        {/* List of Roles from DB */}
         <div style={{ width: '100%', maxWidth: 500, margin: '0 auto', background: '#f3f6fa', borderRadius: '12px', padding: '18px 12px', color: '#222', boxShadow: '0 2px 8px #e3eafc' }}>
           <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '12px', color: '#24518a' }}>Current Roles</div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '1rem' }}>
@@ -71,10 +135,9 @@ const CreateRolePage = () => {
               </tr>
             </thead>
             <tbody>
-              <tr><td style={{ padding: '8px' }}>Engineer</td></tr>
-              <tr><td style={{ padding: '8px' }}>Operator</td></tr>
-              <tr><td style={{ padding: '8px' }}>Supervisor</td></tr>
-              <tr><td style={{ padding: '8px' }}>Technician</td></tr>
+              {roles.map(role => (
+                <tr key={role}><td style={{ padding: '8px' }}>{role}</td></tr>
+              ))}
             </tbody>
           </table>
         </div>
