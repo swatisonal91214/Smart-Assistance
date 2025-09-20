@@ -45,13 +45,14 @@ const UserDashboard = () => {
         </h2>
         <div style={{
           display: 'flex',
-          flexDirection: 'column',
+          flexDirection: 'row',
           justifyContent: 'center',
           alignItems: 'center',
           gap: '32px',
           width: '100%',
           maxWidth: '700px',
         }}>
+          {/* Quick Chat Card */}
           <div style={{
             background: 'linear-gradient(120deg, #24518a 0%, #1a3760 100%)',
             borderRadius: '18px',
@@ -64,7 +65,8 @@ const UserDashboard = () => {
             minWidth: '260px',
             maxWidth: '340px',
           }}>
-            <div style={{ fontWeight: 700, fontSize: '1.3rem', color: '#fff', marginBottom: '18px', textAlign: 'center' }}>Instant Upload & Chat</div>
+            <div style={{ fontWeight: 700, fontSize: '1.3rem', color: '#fff', marginBottom: '18px', textAlign: 'center' }}>Quick Chat</div>
+            <div style={{ color: '#fff', fontWeight: 500, fontSize: '1rem', marginBottom: '8px', textAlign: 'center' }}>Instant upload and chat</div>
             <button
               style={{
                 padding: '12px 32px',
@@ -81,6 +83,41 @@ const UserDashboard = () => {
                 letterSpacing: 0.5,
               }}
               onClick={() => navigate('/upload')}
+            >
+              Go
+            </button>
+          </div>
+          {/* RoleDocsChat Card */}
+          <div style={{
+            background: 'linear-gradient(120deg, #24518a 0%, #1a3760 100%)',
+            borderRadius: '18px',
+            boxShadow: '0 4px 16px rgba(60,100,180,0.10)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '48px 32px',
+            minWidth: '260px',
+            maxWidth: '340px',
+          }}>
+            <div style={{ fontWeight: 700, fontSize: '1.3rem', color: '#fff', marginBottom: '18px', textAlign: 'center' }}>Role Docs Chat</div>
+            <div style={{ color: '#fff', fontWeight: 500, fontSize: '1rem', marginBottom: '8px', textAlign: 'center' }}>Click to access your documents</div>
+            <button
+              style={{
+                padding: '12px 32px',
+                fontSize: '1.1rem',
+                fontWeight: 700,
+                borderRadius: '12px',
+                background: 'linear-gradient(120deg, #6fa3ef 0%, #3b6cb7 100%)',
+                color: '#fff',
+                border: 'none',
+                boxShadow: '0 2px 8px #24518a',
+                cursor: 'pointer',
+                transition: 'background 0.3s',
+                marginTop: '12px',
+                letterSpacing: 0.5,
+              }}
+              onClick={() => navigate('/role-docs-chat')}
             >
               Go
             </button>

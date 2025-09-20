@@ -1,13 +1,36 @@
 import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './SmartAssistance.css';
 
 const SmartAssistance = () => {
   const [pdfName, setPdfName] = useState("");
   const [loading, setLoading] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [showDashboardBtn, setShowDashboardBtn] = useState(false);
+  const [selectedRole, setSelectedRole] = useState("");
+  const [roles, setRoles] = useState([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
   const fileInputRef = useRef();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Determine if navigated from manager dashboard
+  const isManager = location.state && location.state.from === "manager";
+
+  React.useEffect(() => {
+    if (isManager) {
+      setRolesLoading(true);
+      fetch('http://localhost:8000/roles')
+        .then(res => res.json())
+        .then(data => {
+          setRoles(data.roles || []);
+          setRolesLoading(false);
+        })
+        .catch(() => {
+          setRoles([]);
+          setRolesLoading(false);
+        });
+    }
+  }, [isManager]);
 
   const handlePdfUpload = (e) => {
     const file = e.target.files[0];
@@ -19,12 +42,16 @@ const SmartAssistance = () => {
   const handleProcessDocument = async () => {
     setLoading(true);
     setShowChat(false);
-    // Commented out API calls for now
+    setShowDashboardBtn(false);
     try {
       // Upload the file first
       const file = fileInputRef.current.files[0];
       const formData = new FormData();
       formData.append('file', file);
+      // If manager, add role info
+      if (isManager) {
+        formData.append('role', selectedRole);
+      }
       const uploadResponse = await fetch('http://localhost:8000/upload-file', {
         method: 'POST',
         body: formData,
@@ -41,7 +68,8 @@ const SmartAssistance = () => {
         },
         body: JSON.stringify({
           file_path: uploadData.file_path,
-          prefix: pdfName.replace(/\.[^/.]+$/, "") || "default"
+          prefix: pdfName.replace(/\.[^/.]+$/, "") || "default",
+          ...(isManager ? { role: selectedRole } : {})
         }),
       });
       if (!response.ok) {
@@ -49,15 +77,15 @@ const SmartAssistance = () => {
       }
       const data = await response.json();
       setLoading(false);
-      setShowChat(true);
+      if (isManager) {
+        setShowDashboardBtn(true);
+      } else {
+        setShowChat(true);
+      }
     } catch (error) {
       setLoading(false);
       alert(error.message || 'Error processing document');
     }
-    // setTimeout(() => {
-    //   setLoading(false);
-    //   setShowChat(true);
-    // }, 10000);
   };
 
   return (
@@ -130,6 +158,52 @@ const SmartAssistance = () => {
             borderBottomRightRadius: '24px',
           }}
         >
+          {/* Manager role selection dropdown */}
+          {isManager && (
+            <div style={{
+              width: '100%',
+              maxWidth: '340px',
+              marginBottom: '18px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              background: 'linear-gradient(120deg, #6fa3ef 0%, #3b6cb7 100%)',
+              borderRadius: '18px',
+              boxShadow: '0 2px 8px #e3eafc',
+              padding: '18px 0 12px 0',
+            }}>
+              <label htmlFor="role-select" style={{ color: '#fff', fontWeight: 700, fontSize: '1.1rem', marginBottom: '8px' }}>Select Role</label>
+              {rolesLoading ? (
+                <div style={{ color: '#fff', fontWeight: 500, fontSize: '1rem', marginBottom: '8px' }}>Loading roles...</div>
+              ) : (
+                <select
+                  id="role-select"
+                  value={selectedRole}
+                  onChange={e => setSelectedRole(e.target.value)}
+                  style={{
+                    width: '80%',
+                    padding: '10px',
+                    borderRadius: '12px',
+                    border: 'none',
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    background: 'linear-gradient(120deg, #f8fafc 0%, #e3eafc 100%)',
+                    color: '#24518a',
+                    marginBottom: '4px',
+                    boxShadow: '0 1px 4px #e3eafc',
+                    outline: 'none',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <option value="" disabled>Select a role</option>
+                  {roles.map(role => (
+                    <option key={role} value={role}>{role}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
           <label htmlFor="pdf-upload" className="smart-assistance-upload-label" style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div
               className="smart-assistance-upload"
@@ -173,7 +247,7 @@ const SmartAssistance = () => {
             )}
           </label>
           {pdfName && (
-            !loading && !showChat && (
+            !loading && !showChat && !showDashboardBtn && (
               <button
                 className="smart-assistance-process-btn"
                 style={{
@@ -182,14 +256,16 @@ const SmartAssistance = () => {
                   fontSize: '1.1rem',
                   fontWeight: 700,
                   borderRadius: '12px',
-                  background: 'linear-gradient(120deg, #24518a 0%, #1a3760 100%)',
+                  background: selectedRole || !isManager ? 'linear-gradient(120deg, #24518a 0%, #1a3760 100%)' : '#ccc',
                   color: '#fff',
                   border: 'none',
                   boxShadow: '0 2px 8px #24518a',
-                  cursor: 'pointer',
+                  cursor: selectedRole || !isManager ? 'pointer' : 'not-allowed',
                   transition: 'background 0.3s',
+                  opacity: selectedRole || !isManager ? 1 : 0.7,
                 }}
                 onClick={handleProcessDocument}
+                disabled={isManager && !selectedRole}
               >
                 Process Document
               </button>
@@ -237,6 +313,27 @@ const SmartAssistance = () => {
               onClick={() => navigate('/chat')}
             >
               Start Chat
+            </button>
+          )}
+          {showDashboardBtn && (
+            <button
+              className="smart-assistance-chat-btn"
+              style={{
+                marginTop: '32px',
+                padding: '12px 32px',
+                fontSize: '1.1rem',
+                fontWeight: 700,
+                borderRadius: '12px',
+                background: 'linear-gradient(120deg, #24518a 0%, #1a3760 100%)',
+                color: '#fff',
+                border: 'none',
+                boxShadow: '0 2px 8px #24518a',
+                cursor: 'pointer',
+                transition: 'background 0.3s',
+              }}
+              onClick={() => navigate('/manager-dashboard')}
+            >
+              Go to Dashboard
             </button>
           )}
         </div>

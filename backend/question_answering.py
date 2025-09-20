@@ -42,22 +42,24 @@ def answer_question(query, index, chunks, embeddings):
 	else:
 		return f"Error: {response.text}"
 
-def load_embeddings_and_chunks():
+def load_embeddings_and_chunks(folder=None):
+	# Use folder if provided, else default
+	embeddings_dir = folder if folder else EMBEDDING_DIR
 	# Find the first available embeddings file in the directory
-	for file in os.listdir(EMBEDDING_DIR):
+	for file in os.listdir(embeddings_dir):
 		if file.endswith('_embeddings.npy'):
 			prefix = file.replace('_embeddings.npy', '')
-			embeddings = np.load(os.path.join(EMBEDDING_DIR, f"{prefix}_embeddings.npy"))
-			with open(os.path.join(EMBEDDING_DIR, f"{prefix}_chunks.txt"), "r", encoding="utf-8") as f:
+			embeddings = np.load(os.path.join(embeddings_dir, f"{prefix}_embeddings.npy"))
+			with open(os.path.join(embeddings_dir, f"{prefix}_chunks.txt"), "r", encoding="utf-8") as f:
 				chunks = [line.strip() for line in f.readlines()]
 			dim = embeddings.shape[1]
 			index = faiss.IndexFlatL2(dim)
 			index.add(embeddings)
 			return index, embeddings, chunks
-	raise FileNotFoundError("No embeddings file found in the embeddings directory.")
+	raise FileNotFoundError(f"No embeddings file found in the directory: {embeddings_dir}")
 
-def interactive_qa(query):
-	index, embeddings, chunks = load_embeddings_and_chunks()
+def interactive_qa(query, role_folder=None):
+	index, embeddings, chunks = load_embeddings_and_chunks(role_folder)
 	answer = answer_question(query, index, chunks, embeddings)
 	print(f"Answer: {answer}")
 	return answer

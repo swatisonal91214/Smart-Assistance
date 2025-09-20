@@ -80,7 +80,7 @@ const ManagerDashboard = () => {
                 marginTop: '8px',
                 letterSpacing: 0.5,
               }}
-              onClick={() => navigate('/upload')}
+              onClick={() => navigate('/upload', { state: { from: "manager" } })}
             >
               Go
             </button>

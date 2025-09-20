@@ -7,18 +7,20 @@ from file_reader import read_document
 EMBEDDING_DIR = "embeddings"
 
 
-def create_and_store_embeddings(file_path, prefix="default"):
+def create_and_store_embeddings(file_path, prefix="default", output_folder=None):
     """
     Creates and stores embeddings for the given file.
     Args:
         file_path (str): Path to the file (PDF or text).
         prefix (str): Prefix for saved files.
+        output_folder (str): Folder to save embeddings/chunks (optional).
     """
     text = read_document(file_path)
     chunks = chunk_text(text)
     index, embeddings = build_faiss_index(chunks)
-    save_embeddings_and_chunks(embeddings, chunks, prefix)
-    print(f"Embeddings and chunks saved to '{EMBEDDING_DIR}' with prefix '{prefix}'.")
+    save_embeddings_and_chunks(embeddings, chunks, prefix, output_folder)
+    folder = output_folder if output_folder else EMBEDDING_DIR
+    print(f"Embeddings and chunks saved to '{folder}' with prefix '{prefix}'.")
 
 
 def chunk_text(text, chunk_size=500):
@@ -54,9 +56,10 @@ def build_faiss_index(chunks):
     return index, embeddings
 
 
-def save_embeddings_and_chunks(embeddings, chunks, prefix):
-    os.makedirs(EMBEDDING_DIR, exist_ok=True)
-    np.save(os.path.join(EMBEDDING_DIR, f"{prefix}_embeddings.npy"), embeddings)
-    with open(os.path.join(EMBEDDING_DIR, f"{prefix}_chunks.txt"), "w", encoding="utf-8") as f:
+def save_embeddings_and_chunks(embeddings, chunks, prefix, output_folder=None):
+    folder = output_folder if output_folder else EMBEDDING_DIR
+    os.makedirs(folder, exist_ok=True)
+    np.save(os.path.join(folder, f"{prefix}_embeddings.npy"), embeddings)
+    with open(os.path.join(folder, f"{prefix}_chunks.txt"), "w", encoding="utf-8") as f:
         for chunk in chunks:
             f.write(chunk.replace('\n', ' ') + "\n")
