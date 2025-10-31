@@ -31,10 +31,17 @@ const LoginSignupPage = () => {
         const data = await res.json();
         if (data.success) {
           // Only allow login if auth matches expected role
-          if (role === 'manager' && data.auth === 'manager') navigate('/manager-dashboard');
-          else if (role === 'admin' && data.auth === 'admin') navigate('/admin-dashboard');
-          else if (role === 'user' && data.auth === 'user') navigate('/user-dashboard');
-          else setError('Not authenticated');
+          if (role === 'manager' && data.auth === 'manager') {
+            // persist auth info so other pages can access user's role
+            try { localStorage.setItem('auth', data.auth); localStorage.setItem('userId', userId); } catch (e) {}
+            navigate('/manager-dashboard');
+          } else if (role === 'admin' && data.auth === 'admin') {
+            try { localStorage.setItem('auth', data.auth); localStorage.setItem('userId', userId); } catch (e) {}
+            navigate('/admin-dashboard');
+          } else if (role === 'user' && data.auth === 'user') {
+            try { localStorage.setItem('auth', data.auth); localStorage.setItem('userId', userId); } catch (e) {}
+            navigate('/user-dashboard');
+          } else setError('Not authenticated');
         } else {
           setError('Not authenticated');
         }

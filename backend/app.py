@@ -161,13 +161,29 @@ from fastapi import Body
 @app.post("/create-embeddings", response_model=CreateEmbeddingsResponse)
 async def create_embeddings_endpoint(request: CreateEmbeddingsRequest = Body(...)):
 	try:
-		# If role is provided, save embeddings in embeddings/<role>/
+		# Determine output folder:
+		# - If role provided (manager upload), use embeddings/<role>/
+		# - If no role (quick upload), use embeddings/quick/
 		embeddings_folder = "embeddings"
 		if hasattr(request, "role") and request.role:
 			embeddings_folder = os.path.join(embeddings_folder, request.role)
-			os.makedirs(embeddings_folder, exist_ok=True)
-		# Pass embeddings_folder to create_and_store_embeddings if needed
-		# You may need to update create_and_store_embeddings to accept output folder
+		else:
+			# Quick upload - save in embeddings/quick/
+			embeddings_folder = os.path.join(embeddings_folder, "quick")
+			# Clear out any existing files in quick folder
+			if os.path.exists(embeddings_folder):
+				for file in os.listdir(embeddings_folder):
+					file_path = os.path.join(embeddings_folder, file)
+					try:
+						if os.path.isfile(file_path):
+							os.unlink(file_path)
+					except Exception as e:
+						print(f"Error deleting file {file_path}: {e}")
+		
+		# Ensure folder exists
+		os.makedirs(embeddings_folder, exist_ok=True)
+		
+		# Create embeddings in the determined folder
 		create_and_store_embeddings(request.file_path, request.prefix, embeddings_folder)
 		return CreateEmbeddingsResponse(message="Embeddings created successfully.")
 	except Exception as e:
@@ -188,7 +204,9 @@ async def upload_file(file: UploadFile = File(...)):
 @app.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
 	try:
-		answer = interactive_qa(request.query)
+		# For quick chat, always use the embeddings/quick folder
+		quick_folder = os.path.join("embeddings", "quick")
+		answer = interactive_qa(request.query, role_folder=quick_folder)
 		return ChatResponse(answer=answer)
 	except Exception as e:
 		import traceback
@@ -292,6 +310,23 @@ async def get_users():
 	finally:
 		cur.close()
 		conn.close()
+
+
+# Endpoint to get a single user's role by userId
+@app.get("/user-role")
+async def get_user_role(userId: str = Query(...)):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT role FROM users WHERE userId=%s", (userId,))
+        row = cur.fetchone()
+        role = row[0] if row and row[0] else ""
+        return {"role": role}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+    finally:
+        cur.close()
+        conn.close()
 
 # Endpoint to get document names for a role
 @app.get("/role-docs")

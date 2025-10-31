@@ -16,8 +16,15 @@ def create_and_store_embeddings(file_path, prefix="default", output_folder=None)
         output_folder (str): Folder to save embeddings/chunks (optional).
     """
     text = read_document(file_path)
+    if not text:
+        raise RuntimeError(f"Failed to extract text from document: {file_path}")
     chunks = chunk_text(text)
-    index, embeddings = build_faiss_index(chunks)
+    if not chunks:
+        raise RuntimeError("No text chunks created from document")
+    try:
+        index, embeddings = build_faiss_index(chunks)
+    except Exception as e:
+        raise RuntimeError(f"Failed to build embeddings/index: {e}")
     save_embeddings_and_chunks(embeddings, chunks, prefix, output_folder)
     folder = output_folder if output_folder else EMBEDDING_DIR
     print(f"Embeddings and chunks saved to '{folder}' with prefix '{prefix}'.")
@@ -36,16 +43,21 @@ def get_embedding(text):
         "model": "nomic-embed-text",
         "prompt": text
     }
-    response = requests.post(EMBED_URL, json=payload)
+    try:
+        response = requests.post(EMBED_URL, json=payload, timeout=30)
+    except requests.exceptions.RequestException as e:
+        raise RuntimeError(f"Embedding service request failed: {e}")
     if response.status_code == 200:
         data = response.json()
         # Ollama returns {'embedding': [[...]]} for batch, or {'embedding': [...]} for single
         emb = data.get("embedding")
+        if emb is None:
+            raise RuntimeError(f"Embedding response missing 'embedding' field: {data}")
         if isinstance(emb[0], list):
             emb = emb[0]
         return np.array(emb, dtype=np.float32)
     else:
-        raise RuntimeError(f"Embedding error: {response.text}")
+        raise RuntimeError(f"Embedding error: {response.status_code} {response.text}")
 
 
 def build_faiss_index(chunks):

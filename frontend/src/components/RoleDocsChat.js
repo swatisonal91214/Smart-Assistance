@@ -4,9 +4,10 @@ import { FaPaperPlane } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import './ChatComponent.css';
 
+import LogoutButton from './LogoutButton';
 const RoleDocsChat = () => {
-  // For demo, hardcode role. Replace with context or prop as needed.
-  const role = 'Operator';
+  // Read role from localStorage (set during login). If not present, role will be empty and we won't fetch documents.
+  const [role, setRole] = useState('');
   const [message, setMessage] = useState('');
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
@@ -15,9 +16,15 @@ const RoleDocsChat = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // If no role available, don't attempt to fetch; ask user to login/select role
+    if (!role) {
+      setDocuments([]);
+      setDocsLoading(false);
+      return;
+    }
     // Fetch document names for the role
     setDocsLoading(true);
-    fetch(`http://localhost:8000/role-docs?role=${role}`)
+    fetch(`http://localhost:8000/role-docs?role=${encodeURIComponent(role)}`)
       .then(res => res.json())
       .then(data => {
         setDocuments(data.documents || []);
@@ -28,6 +35,41 @@ const RoleDocsChat = () => {
         setDocsLoading(false);
       });
   }, [role]);
+
+  // Read stored role on mount
+  useEffect(() => {
+    try {
+      const userId = localStorage.getItem('userId') || '';
+      if (userId) {
+        // Fetch role from backend using logged in userId
+        fetch(`http://localhost:8000/user-role?userId=${encodeURIComponent(userId)}`)
+          .then(res => res.json())
+          .then(data => {
+            const backendRole = data && data.role ? data.role : '';
+            if (backendRole) {
+              const normalized = backendRole.charAt(0).toUpperCase() + backendRole.slice(1);
+              setRole(normalized);
+            } else {
+              // fallback to local auth role
+              const stored = localStorage.getItem('auth') || localStorage.getItem('role') || '';
+              const normalized = stored ? (stored.charAt(0).toUpperCase() + stored.slice(1)) : '';
+              setRole(normalized);
+            }
+          })
+          .catch(() => {
+            const stored = localStorage.getItem('auth') || localStorage.getItem('role') || '';
+            const normalized = stored ? (stored.charAt(0).toUpperCase() + stored.slice(1)) : '';
+            setRole(normalized);
+          });
+      } else {
+        const stored = localStorage.getItem('auth') || localStorage.getItem('role') || '';
+        const normalized = stored ? (stored.charAt(0).toUpperCase() + stored.slice(1)) : '';
+        setRole(normalized);
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
 
   const handleChange = (e) => {
     setMessage(e.target.value);
@@ -322,6 +364,12 @@ const RoleDocsChat = () => {
         </button>
       </div>
     </div>
+  );
+  return (
+    <>
+      <LogoutButton />
+      {/* ...existing UI code... */}
+    </>
   );
 };
 

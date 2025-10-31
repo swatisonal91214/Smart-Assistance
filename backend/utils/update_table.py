@@ -33,7 +33,7 @@ cur = conn.cursor()
 #     INSERT INTO roles (Roleid, RoleName)
 #     VALUES (%s, %s)
 # """, ('R-01', 'Operator'))
-cur.execute("SELECT * FROM roles;")
+cur.execute("SELECT * FROM users;")
 rows = cur.fetchall()
 for row in rows:
     print(row)

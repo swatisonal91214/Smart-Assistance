@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import LogoutButton from './LogoutButton';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ const UserDashboard = () => {
       padding: '24px 8px',
       boxSizing: 'border-box',
     }}>
+      <LogoutButton />
       <div style={{
         width: '100%',
         maxWidth: '900px',
