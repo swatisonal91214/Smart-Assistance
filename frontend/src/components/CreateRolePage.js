@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import LogoutButton from './LogoutButton';
 
 const CreateRolePage = () => {
   const [roles, setRoles] = useState([]);
@@ -66,6 +67,7 @@ const CreateRolePage = () => {
 
   return (
     <div style={{
+      position: 'relative',
       minHeight: '100vh',
       width: '100vw',
       background: 'linear-gradient(120deg, #f8fafc 0%, #e3eafc 100%)',
@@ -79,6 +81,7 @@ const CreateRolePage = () => {
       padding: '24px 8px',
       boxSizing: 'border-box',
     }}>
+      <LogoutButton />
       <div style={{
         width: '100%',
         maxWidth: '700px',

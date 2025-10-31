@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './SmartAssistance.css';
+import LogoutButton from './LogoutButton';
 
 const SmartAssistance = () => {
   const [pdfName, setPdfName] = useState("");
@@ -92,6 +93,7 @@ const SmartAssistance = () => {
     <div
       className="smart-assistance-container"
       style={{
+        position: 'relative',
         minHeight: '100vh',
         width: '100vw',
         background: 'linear-gradient(120deg, #f8fafc 0%, #e3eafc 100%)',
@@ -106,6 +108,7 @@ const SmartAssistance = () => {
         boxSizing: 'border-box',
       }}
     >
+      <LogoutButton />
       <div
         className="smart-assistance-card glass-effect"
         style={{

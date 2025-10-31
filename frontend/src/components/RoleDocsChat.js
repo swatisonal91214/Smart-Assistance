@@ -113,6 +113,7 @@ const RoleDocsChat = () => {
 
   return (
     <div className="chat-container" style={{
+      position: 'relative',
       minHeight: '100vh',
       display: 'flex',
       flexDirection: 'column',
@@ -126,6 +127,7 @@ const RoleDocsChat = () => {
       padding: '24px 8px',
       boxSizing: 'border-box',
     }}>
+      <LogoutButton />
       <div style={{
         width: '100%',
         maxWidth: '750px',
@@ -364,12 +366,6 @@ const RoleDocsChat = () => {
         </button>
       </div>
     </div>
-  );
-  return (
-    <>
-      <LogoutButton />
-      {/* ...existing UI code... */}
-    </>
   );
 };
 

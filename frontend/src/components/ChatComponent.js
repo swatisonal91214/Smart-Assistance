@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './ChatComponent.css';
 import { FaPaperPlane } from 'react-icons/fa';
+import LogoutButton from './LogoutButton';
 
 const ChatComponent = () => {
   const [message, setMessage] = useState('');
@@ -51,6 +52,7 @@ const ChatComponent = () => {
 
   return (
     <div className="chat-container" style={{
+      position: 'relative',
       minHeight: '100vh',
       display: 'flex',
       flexDirection: 'column',
@@ -64,6 +66,7 @@ const ChatComponent = () => {
       padding: '24px 8px',
       boxSizing: 'border-box',
     }}>
+      <LogoutButton />
       <div style={{
         width: '100%',
         maxWidth: '750px',

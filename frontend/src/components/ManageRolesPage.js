@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import LogoutButton from './LogoutButton';
 
 const API_BASE = 'http://localhost:8000'; // Change if backend runs elsewhere
 
@@ -51,6 +52,7 @@ const ManageRolesPage = () => {
 
   return (
     <div style={{
+      position: 'relative',
       minHeight: '100vh',
       width: '100vw',
       background: 'linear-gradient(120deg, #f8fafc 0%, #e3eafc 100%)',
@@ -64,6 +66,7 @@ const ManageRolesPage = () => {
       padding: '24px 8px',
       boxSizing: 'border-box',
     }}>
+      <LogoutButton />
       <div style={{
         width: '100%',
         maxWidth: '700px',
